@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLO Email Notifier</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0f1117;
+  --bg2:      #161b24;
+  --bg3:      #1d2330;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.14);
+  --text:     #e2e8f0;
+  --text2:    #7d8fa8;
+  --text3:    #4a5568;
+  --accent:   #3b82f6;
+  --accent2:  #1d4ed8;
+  --danger:   #ef4444;
+  --danger-bg:#2d1515;
+  --warning:  #f59e0b;
+  --warning-bg:#2a1f08;
+  --success:  #22c55e;
+  --success-bg:#0d2618;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+  --radius:   6px;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 32px 20px 60px;
+  line-height: 1.5;
+}
+
+/* Subtle grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header-left h1 {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.header-left h1 span { color: var(--accent); }
+.header-left p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  background: var(--bg2);
+  letter-spacing: 0.5px;
+}
+
+/* Cards */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-header .step {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--accent);
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.card-header h2 { font-size: 13px; font-weight: 500; color: var(--text); }
+.card-header .hint { font-size: 12px; color: var(--text2); margin-left: auto; }
+.card-body { padding: 16px 20px; }
+
+/* Form fields */
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field.full { grid-column: 1 / -1; }
+label { font-size: 11px; font-family: var(--mono); color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; }
+input[type="text"], input[type="email"], input[type="password"] {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus { border-color: var(--accent); }
+input::placeholder { color: var(--text3); }
+
+/* Password toggle */
+.pass-wrap { position: relative; }
+.pass-wrap input { width: 100%; padding-right: 38px; }
+.pass-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--text3);
+  padding: 2px; display: flex; align-items: center;
+}
+.pass-toggle:hover { color: var(--text2); }
+
+/* Setup guide */
+.setup-guide {
+  margin-top: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text2);
+}
+.setup-guide strong { color: var(--accent); font-family: var(--mono); }
+.setup-guide ol { padding-left: 18px; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.setup-guide a { color: var(--accent); text-decoration: none; }
+.setup-guide a:hover { text-decoration: underline; }
+
+/* Upload zone */
+.upload-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--bg3);
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+.upload-zone input { display: none; }
+.upload-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-zone p { font-size: 13px; color: var(--text2); }
+.upload-zone span { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+.upload-zone .file-name { font-family: var(--mono); font-size: 12px; color: var(--success); margin-top: 6px; }
+
+/* SLO threshold */
+.threshold-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.threshold-row label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+input[type="range"] { flex: 1; accent-color: var(--accent); }
+.threshold-val {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  color: var(--warning); background: var(--warning-bg);
+  padding: 2px 10px; border-radius: 3px; border: 1px solid rgba(245,158,11,0.2);
+  min-width: 48px; text-align: center;
+}
+
+/* Results table */
+.results-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.results-header h3 { font-size: 13px; font-weight: 500; color: var(--text2); }
+.count-badges { display: flex; gap: 8px; }
+.count-badge {
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 10px; border-radius: 3px;
+  font-weight: 500;
+}
+.count-badge.red   { background: var(--danger-bg);  color: var(--danger);  border: 1px solid rgba(239,68,68,0.2); }
+.count-badge.amber { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245,158,11,0.2); }
+.count-badge.green { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+
+.table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead { background: var(--bg3); }
+th {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text2);
+  padding: 10px 12px; text-align: left; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+.pill {
+  display: inline-block; font-family: var(--mono); font-size: 11px;
+  padding: 2px 8px; border-radius: 3px; font-weight: 500; white-space: nowrap;
+}
+.pill-red    { background: var(--danger-bg);  color: var(--danger);  border: 1px solid rgba(239,68,68,0.25); }
+.pill-amber  { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245,158,11,0.25); }
+.pill-green  { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.25); }
+.pill-gray   { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+
+.no-data {
+  text-align: center; padding: 32px; color: var(--text3);
+  font-size: 13px; font-family: var(--mono);
+}
+
+/* Send button */
+.send-row { display: flex; align-items: center; gap: 12px; }
+.btn-send {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius);
+  font-family: var(--mono); font-size: 13px; font-weight: 500;
+  padding: 11px 24px; cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-send:hover:not(:disabled) { background: var(--accent2); }
+.btn-send:active:not(:disabled) { transform: scale(0.98); }
+.btn-send:disabled { opacity: 0.45; cursor: not-allowed; }
+.send-status { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+
+/* Progress bar */
+.progress-wrap { height: 2px; background: var(--border); border-radius: 2px; margin-top: 10px; overflow: hidden; display: none; }
+.progress-bar  { height: 100%; width: 0; background: var(--accent); transition: width 0.3s; border-radius: 2px; }
+
+/* Log */
+.log {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 14px;
+  font-family: var(--mono); font-size: 11px;
+  max-height: 120px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 3px;
+  margin-top: 10px;
+}
+.log-line { display: flex; gap: 8px; }
+.log-time { color: var(--text3); flex-shrink: 0; }
+.log-ok   { color: var(--success); }
+.log-err  { color: var(--danger); }
+.log-info { color: var(--text2); }
+
+/* Alert banner */
+.alert {
+  padding: 10px 14px; border-radius: var(--radius);
+  font-size: 12px; margin-top: 10px; display: none;
+}
+.alert.error   { background: var(--danger-bg);  color: var(--danger);  border: 1px solid rgba(239,68,68,0.2); }
+.alert.success { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+
+@media (max-width: 600px) {
+  .fields { grid-template-columns: 1fr; }
+  .header { flex-direction: column; gap: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-left">
+      <h1><span>//</span> SLO Email Notifier</h1>
+      <p>Upload your returns CSV → review alerts → send notification email</p>
+    </div>
+    <span class="badge">TrueLog Logistics</span>
+  </div>
+
+  <!-- STEP 1: Gmail credentials -->
+  <div class="card">
+    <div class="card-header">
+      <span class="step">01</span>
+      <h2>Your Gmail credentials</h2>
+      <span class="hint">Stored in memory only — never saved</span>
+    </div>
+    <div class="card-body">
+      <div class="fields">
+        <div class="field">
+          <label>Your Gmail Address</label>
+          <input type="email" id="gmailUser" placeholder="yourname@gmail.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label>App Password</label>
+          <div class="pass-wrap">
+            <input type="password" id="gmailPass" placeholder="xxxx xxxx xxxx xxxx" autocomplete="off">
+            <button class="pass-toggle" onclick="togglePass()" title="Show/hide">
+              <svg id="eyeIcon" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Send To (recipient email)</label>
+          <input type="email" id="toEmail" placeholder="partner@company.com">
+        </div>
+        <div class="field">
+          <label>CC (optional)</label>
+          <input type="email" id="ccEmail" placeholder="manager@company.com">
+        </div>
+      </div>
+      <div class="setup-guide">
+        <strong>Need an App Password?</strong> Regular Gmail password won't work.
+        <ol>
+          <li>Go to <a href="https://myaccount.google.com/security" target="_blank">myaccount.google.com/security</a> → enable 2-Step Verification</li>
+          <li>Go to <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+          <li>Create a new app password → copy the 16-character code → paste above</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Upload CSV -->
+  <div class="card">
+    <div class="card-header">
+      <span class="step">02</span>
+      <h2>Upload returns CSV</h2>
+    </div>
+    <div class="card-body">
+      <div class="upload-zone" id="dropZone" onclick="document.getElementById('csvFile').click()">
+        <input type="file" id="csvFile" accept=".csv" onchange="handleFile(this)">
+        <div class="upload-icon">📂</div>
+        <p>Click to upload or drag & drop your CSV</p>
+        <span>TrueLog Shipping & Logistics — RETURNS</span>
+        <div class="file-name" id="fileName"></div>
+      </div>
+      <div class="threshold-row">
+        <label>Alert if SLO days remaining ≤</label>
+        <input type="range" id="threshold" min="1" max="30" value="7" oninput="updateThreshold()">
+        <div class="threshold-val" id="thresholdVal">7 days</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Review alerts -->
+  <div class="card">
+    <div class="card-header">
+      <span class="step">03</span>
+      <h2>Review alerts</h2>
+    </div>
+    <div class="card-body">
+      <div class="results-header">
+        <h3 id="resultsTitle">Upload a CSV to see alerts</h3>
+        <div class="count-badges" id="countBadges" style="display:none">
+          <span class="count-badge red"   id="countRed">0 critical</span>
+          <span class="count-badge amber" id="countAmber">0 warning</span>
+          <span class="count-badge green" id="countGreen">0 ok</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="alertTable">
+          <thead>
+            <tr>
+              <th>TL Ref</th>
+              <th>Country</th>
+              <th>Employee</th>
+              <th>Product</th>
+              <th>SLO Days Left</th>
+              <th>Return Status</th>
+              <th>Pickup Note (Col N)</th>
+            </tr>
+          </thead>
+          <tbody id="alertBody">
+            <tr><td colspan="7" class="no-data">— no data loaded —</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Send -->
+  <div class="card">
+    <div class="card-header">
+      <span class="step">04</span>
+      <h2>Send email notification</h2>
+    </div>
+    <div class="card-body">
+      <div class="send-row">
+        <button class="btn-send" id="sendBtn" onclick="sendEmail()" disabled>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+          </svg>
+          Send Email
+        </button>
+        <span class="send-status" id="sendStatus">Fill credentials and upload CSV first</span>
+      </div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="alert" id="alertBanner"></div>
+      <div class="log" id="log" style="display:none"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let allRows = [];
+let alertRows = [];
+
+// ── Drag & drop ────────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) processFile(file);
+});
+
+function handleFile(input) {
+  if (input.files[0]) processFile(input.files[0]);
+}
+
+// ── CSV parsing ────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.split('\n');
+  const rows = [];
+  for (const line of lines) {
+    const cols = [];
+    let inQ = false, cur = '';
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') { inQ = !inQ; }
+      else if (line[i] === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += line[i]; }
+    }
+    cols.push(cur.trim());
+    rows.push(cols);
+  }
+  return rows;
+}
+
+function processFile(file) {
+  document.getElementById('fileName').textContent = '📄 ' + file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCSV(e.target.result);
+    // Skip header rows (rows 1-2), data starts at row index 2
+    allRows = rows.slice(2).filter(r => r.some(c => c && c !== '---' && c !== 'FALSE' && c !== ''));
+    buildAlertTable();
+    checkReady();
+    addLog(`Loaded ${allRows.length} data rows from ${file.name}`, 'info');
+  };
+  reader.readAsText(file);
+}
+
+// ── Column indices (0-based) ───────────────────────────────────
+// Based on actual sheet: A=0, G=6, N=13, O=14, P=15, Y=24 (days pending)
+const C = {
+  CONDITION:   0,   // A
+  COUNTRY:     1,   // B
+  TL_REF:      6,   // G
+  NOTES1:      11,  // L
+  PICKUP_NOTE: 13,  // N  ← key column
+  STATUS:      14,  // O
+  DATE:        15,  // P
+  DAYS_PENDING:24,  // Y — "Days Pending, no tracking"
+  FIRST_NAME:  56,  // ship_to_first_name (approx)
+  LAST_NAME:   57,  // ship_to_last_name
+  PRODUCT:     47,  // product_description
+  RETURN_STATUS: 50, // status
+};
+
+function getCell(row, idx) {
+  return (row[idx] || '').toString().trim();
+}
+
+function buildAlertTable() {
+  const threshold = parseInt(document.getElementById('threshold').value);
+  alertRows = [];
+
+  for (const row of allRows) {
+    const tlRef      = getCell(row, C.TL_REF);
+    const country    = getCell(row, C.COUNTRY);
+    const pickupNote = getCell(row, C.PICKUP_NOTE);
+    const status     = getCell(row, C.STATUS);
+    const condition  = getCell(row, C.CONDITION);
+    const daysRaw    = getCell(row, C.DAYS_PENDING);
+    const product    = getCell(row, C.PRODUCT) || getCell(row, 48);
+    const firstName  = getCell(row, C.FIRST_NAME);
+    const lastName   = getCell(row, C.LAST_NAME);
+    const returnStatus = getCell(row, C.RETURN_STATUS);
+
+    if (!tlRef || tlRef === '---') continue;
+
+    const days = parseInt(daysRaw);
+    const hasPickupNote = pickupNote && pickupNote !== '---' && pickupNote !== '';
+
+    // Include rows that: have a pickup note OR are overdue/pending
+    const daysValid = !isNaN(days);
+    const isAlert = hasPickupNote || (daysValid && days <= threshold) || (status && status.toLowerCase().includes('open'));
+
+    if (!isAlert) continue;
+
+    let urgency = 'ok';
+    if (daysValid && days <= 3) urgency = 'critical';
+    else if (daysValid && days <= threshold) urgency = 'warning';
+    else if (hasPickupNote) urgency = 'warning';
+
+    alertRows.push({ tlRef, country, condition, pickupNote, status, product, firstName, lastName, returnStatus, days: daysValid ? days : null, urgency });
+  }
+
+  // Sort: critical first
+  alertRows.sort((a,b) => {
+    const order = { critical: 0, warning: 1, ok: 2 };
+    return order[a.urgency] - order[b.urgency];
+  });
+
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('alertBody');
+  const countBadges = document.getElementById('countBadges');
+
+  if (alertRows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="no-data">No alerts found — all orders within SLO threshold</td></tr>';
+    document.getElementById('resultsTitle').textContent = 'No alerts found';
+    countBadges.style.display = 'none';
+    return;
+  }
+
+  const critical = alertRows.filter(r => r.urgency === 'critical').length;
+  const warning  = alertRows.filter(r => r.urgency === 'warning').length;
+  const ok       = alertRows.filter(r => r.urgency === 'ok').length;
+
+  document.getElementById('resultsTitle').textContent = `${alertRows.length} order${alertRows.length !== 1 ? 's' : ''} need attention`;
+  countBadges.style.display = 'flex';
+  document.getElementById('countRed').textContent   = `${critical} critical`;
+  document.getElementById('countAmber').textContent = `${warning} warning`;
+  document.getElementById('countGreen').textContent = `${ok} ok`;
+
+  tbody.innerHTML = alertRows.map(r => {
+    const pillClass = r.urgency === 'critical' ? 'pill-red' : r.urgency === 'warning' ? 'pill-amber' : 'pill-green';
+    const daysLabel = r.days !== null ? `${r.days}d` : '—';
+    const name = [r.firstName, r.lastName].filter(Boolean).join(' ') || '—';
+    const product = r.product ? r.product.substring(0, 40) + (r.product.length > 40 ? '…' : '') : '—';
+    const note = r.pickupNote ? r.pickupNote.substring(0, 50) + (r.pickupNote.length > 50 ? '…' : '') : '—';
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:11px">${r.tlRef || '—'}</td>
+      <td><span class="pill pill-gray">${r.country || '—'}</span></td>
+      <td>${name}</td>
+      <td style="font-size:11px;color:var(--text2)">${product}</td>
+      <td><span class="pill ${pillClass}">${daysLabel}</span></td>
+      <td style="font-size:11px">${r.returnStatus || r.status || '—'}</td>
+      <td style="font-size:11px;color:var(--text2)">${note}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateThreshold() {
+  const v = document.getElementById('threshold').value;
+  document.getElementById('thresholdVal').textContent = v + ' days';
+  if (allRows.length) buildAlertTable();
+}
+
+// ── Send email ─────────────────────────────────────────────────
+async function sendEmail() {
+  const gmailUser = document.getElementById('gmailUser').value.trim();
+  const gmailPass = document.getElementById('gmailPass').value.trim();
+  const toEmail   = document.getElementById('toEmail').value.trim();
+  const ccEmail   = document.getElementById('ccEmail').value.trim();
+
+  if (!gmailUser || !gmailPass || !toEmail) {
+    showAlert('Please fill in Gmail address, App Password, and recipient email.', 'error');
+    return;
+  }
+  if (alertRows.length === 0) {
+    showAlert('No alert rows to send.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Sending…`;
+
+  showProgress(true);
+  setProgress(20);
+  addLog(`Preparing email for ${toEmail}…`, 'info');
+
+  const critical = alertRows.filter(r => r.urgency === 'critical').length;
+  const warning  = alertRows.filter(r => r.urgency === 'warning').length;
+  const subject  = `[SLO Alert] ${alertRows.length} return${alertRows.length !== 1 ? 's' : ''} need attention — ${critical} critical, ${warning} warning`;
+
+  setProgress(40);
+  const htmlBody = buildEmailHTML(alertRows);
+  setProgress(60);
+
+  try {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gmailUser, gmailPass, toEmail, ccEmail, subject, htmlBody })
+    });
+
+    setProgress(90);
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      setProgress(100);
+      addLog(`✓ Email sent to ${toEmail} — ${alertRows.length} alerts`, 'ok');
+      showAlert(`Email sent successfully to ${toEmail} with ${alertRows.length} alert${alertRows.length !== 1 ? 's' : ''}.`, 'success');
+    } else {
+      throw new Error(data.error || 'Unknown error');
+    }
+  } catch (err) {
+    addLog(`✗ ${err.message}`, 'err');
+    showAlert(err.message, 'error');
+  }
+
+  setTimeout(() => showProgress(false), 1200);
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg> Send Email`;
+  checkReady();
+}
+
+function buildEmailHTML(rows) {
+  const critical = rows.filter(r => r.urgency === 'critical').length;
+  const warning  = rows.filter(r => r.urgency === 'warning').length;
+  const date     = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const rowsHTML = rows.map(r => {
+    const bg    = r.urgency === 'critical' ? '#2d1515' : r.urgency === 'warning' ? '#2a1f08' : '#0d2618';
+    const color = r.urgency === 'critical' ? '#ef4444' : r.urgency === 'warning' ? '#f59e0b' : '#22c55e';
+    const label = r.urgency === 'critical' ? 'CRITICAL' : r.urgency === 'warning' ? 'WARNING' : 'OK';
+    const name  = [r.firstName, r.lastName].filter(Boolean).join(' ') || '—';
+    return `<tr style="border-bottom:1px solid #2a2a3a">
+      <td style="padding:10px 14px;font-family:monospace;font-size:12px;color:#94a3b8">${r.tlRef || '—'}</td>
+      <td style="padding:10px 14px;font-size:13px">${r.country || '—'}</td>
+      <td style="padding:10px 14px;font-size:13px">${name}</td>
+      <td style="padding:10px 14px;font-size:12px;color:#94a3b8">${(r.product || '—').substring(0,45)}</td>
+      <td style="padding:10px 14px"><span style="background:${bg};color:${color};padding:3px 9px;border-radius:3px;font-family:monospace;font-size:11px;font-weight:600">${label}</span></td>
+      <td style="padding:10px 14px;font-size:12px;color:#94a3b8">${r.days !== null ? r.days + ' days' : '—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:#94a3b8">${(r.pickupNote || '—').substring(0,60)}</td>
+    </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#0f1117;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e2e8f0">
+<div style="max-width:860px;margin:0 auto;padding:32px 20px">
+  <div style="margin-bottom:24px">
+    <h1 style="font-size:20px;font-weight:600;margin:0 0 6px;color:#e2e8f0">🚨 SLO Return Alerts</h1>
+    <p style="color:#7d8fa8;font-size:13px;margin:0">Generated ${date} · ${rows.length} order${rows.length!==1?'s':''} require attention</p>
+  </div>
+  <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+    <div style="background:#2d1515;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:12px 20px;text-align:center">
+      <div style="font-size:24px;font-weight:700;color:#ef4444;font-family:monospace">${critical}</div>
+      <div style="font-size:11px;color:#7d8fa8;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px">Critical</div>
+    </div>
+    <div style="background:#2a1f08;border:1px solid rgba(245,158,11,0.2);border-radius:6px;padding:12px 20px;text-align:center">
+      <div style="font-size:24px;font-weight:700;color:#f59e0b;font-family:monospace">${warning}</div>
+      <div style="font-size:11px;color:#7d8fa8;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px">Warning</div>
+    </div>
+    <div style="background:#0d2618;border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:12px 20px;text-align:center">
+      <div style="font-size:24px;font-weight:700;color:#22c55e;font-family:monospace">${rows.length - critical - warning}</div>
+      <div style="font-size:11px;color:#7d8fa8;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px">Monitored</div>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;background:#161b24;border-radius:8px;overflow:hidden;border:1px solid #1d2330">
+    <thead>
+      <tr style="background:#1d2330;border-bottom:1px solid #2a2a3a">
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-family:monospace;color:#7d8fa8;text-transform:uppercase;letter-spacing:0.8px">TL Ref</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-family:monospace;color:#7d8fa8;text-transform:uppercase;letter-spacing:0.8px">Country</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-family:monospace;color:#7d8fa8;text-transform:uppercase;letter-spacing:0.8px">Employee</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-family:monospace;color:#7d8fa8;text-transform:uppercase;letter-spacing:0.8px">Product</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-family:monospace;color:#7d8fa8;text-transform:uppercase;letter-spacing:0.8px">Status</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-family:monospace;color:#7d8fa8;text-transform:uppercase;letter-spacing:0.8px">Days Left</th>
+        <th style="padding:10px 14px;text-align:left;font-size:10px;font-family:monospace;color:#7d8fa8;text-transform:uppercase;letter-spacing:0.8px">Pickup Note</th>
+      </tr>
+    </thead>
+    <tbody>${rowsHTML}</tbody>
+  </table>
+  <p style="margin-top:24px;font-size:11px;color:#4a5568;font-family:monospace">Sent via SLO Email Notifier · TrueLog Logistics</p>
+</div></body></html>`;
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function checkReady() {
+  const gmailUser = document.getElementById('gmailUser').value.trim();
+  const gmailPass = document.getElementById('gmailPass').value.trim();
+  const toEmail   = document.getElementById('toEmail').value.trim();
+  const ready = gmailUser && gmailPass && toEmail && alertRows.length > 0;
+  document.getElementById('sendBtn').disabled = !ready;
+  document.getElementById('sendStatus').textContent = ready
+    ? `Ready to send ${alertRows.length} alert${alertRows.length !== 1 ? 's' : ''} to ${toEmail}`
+    : (!allRows.length ? 'Upload a CSV first' : !gmailUser || !gmailPass || !toEmail ? 'Fill in all credential fields' : 'No alerts to send');
+}
+
+['gmailUser','gmailPass','toEmail','ccEmail'].forEach(id =>
+  document.getElementById(id).addEventListener('input', checkReady)
+);
+
+function togglePass() {
+  const f = document.getElementById('gmailPass');
+  f.type = f.type === 'password' ? 'text' : 'password';
+}
+
+function showProgress(show) {
+  document.getElementById('progressWrap').style.display = show ? 'block' : 'none';
+  if (!show) document.getElementById('progressBar').style.width = '0';
+}
+function setProgress(pct) {
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function showAlert(msg, type) {
+  const el = document.getElementById('alertBanner');
+  el.textContent = msg;
+  el.className = `alert ${type}`;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+function addLog(msg, type) {
+  const log = document.getElementById('log');
+  log.style.display = 'flex';
+  const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${time}</span><span class="log-${type}">${msg}</span>`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+</script>
+</body>
+</html>

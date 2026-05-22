@@ -1,0 +1,8 @@
+{
+  "name": "slo-email-notifier",
+  "version": "1.0.0",
+  "description": "SLO Email Notifier — hosted web app",
+  "dependencies": {
+    "nodemailer": "^6.9.13"
+  }
+}
