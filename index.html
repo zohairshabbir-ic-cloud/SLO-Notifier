@@ -287,8 +287,8 @@ tr:hover td { background: var(--bg3); }
             </button>
           </div>
         </div>
-        <div class="field"><label>Partner Email (To)</label><input type="email" id="toEmail" placeholder="partner@company.com"></div>
-        <div class="field"><label>CC (optional)</label><input type="email" id="ccEmail" placeholder="manager@company.com"></div>
+        <div class="field"><label>Partner Emails (To) — comma separated</label><input type="email" id="toEmail" placeholder="partner@company.com, partner2@company.com"></div>
+        <div class="field"><label>CC (optional) — comma separated</label><input type="email" id="ccEmail" placeholder="manager@company.com, other@company.com"></div>
       </div>
       <div class="setup-guide">
         <strong>Need an App Password?</strong> Go to <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a> → create one → paste above. Requires 2-Step Verification to be enabled first.
@@ -511,7 +511,7 @@ async function sendEmail(){
   const toEmail  =document.getElementById('toEmail').value.trim();
   const ccEmail  =document.getElementById('ccEmail').value.trim();
   const rows     =getFilteredRows().sort((a,b)=>a.days-b.days);
-  if(!gmailUser||!gmailPass||!toEmail){showAlert('Fill in Gmail address, App Password, and recipient email.','error');return;}
+  if(!gmailUser||!gmailPass||!toEmail){showAlert('Fill in Gmail address, App Password, and at least one recipient email.','error');return;}
   if(!rows.length){showAlert('No alerts to send for this region.','error');return;}
   const btn=document.getElementById('sendBtn');
   btn.disabled=true;
@@ -622,7 +622,7 @@ function checkReady(){
   document.getElementById('sendBtn').disabled=!ready;
   const lbl=activeRegion==='ALL'?'all regions':activeRegion;
   document.getElementById('sendStatus').textContent=ready
-    ?`Ready — ${rows.length} alert${rows.length!==1?'s':''} for ${lbl} → ${t}`
+    ?`Ready — ${rows.length} alert${rows.length!==1?'s':''} for ${lbl} → ${t.split(',').length} recipient${t.split(',').length!==1?'s':''}`
     :(!Object.keys(allAlerts).length?'Upload a CSV first':!u||!p||!t?'Fill in all credential fields':'No alerts for this region');
 }
 ['gmailUser','gmailPass','toEmail','ccEmail'].forEach(id=>document.getElementById(id).addEventListener('input',checkReady));
