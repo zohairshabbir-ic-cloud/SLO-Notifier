@@ -316,7 +316,7 @@ tr:hover td { background: var(--bg3); }
     <div class="card-body">
       <div class="stats-grid" id="statsGrid" style="display:none">
         <div class="stat-box red">  <div class="num" id="statOverdue">0</div><div class="lbl">Overdue</div></div>
-        <div class="stat-box amber"><div class="num" id="statNear">0</div>   <div class="lbl">Near SLO ≤7d</div></div>
+        <div class="stat-box amber"><div class="num" id="statNear">0</div>   <div class="lbl">Near SLO ≤5d</div></div>
         <div class="stat-box blue"> <div class="num" id="statRegions">0</div><div class="lbl">Countries</div></div>
         <div class="stat-box">      <div class="num" id="statTotal">0</div>  <div class="lbl">Total Alerts</div></div>
       </div>
@@ -408,12 +408,12 @@ function processFile(file){
     for(const row of rows){
       if(row.length<18) continue;
       const days = parseInt(g(row,C.DAYS_UNTIL));
-      if(isNaN(days)||days>7) continue;
+      if(isNaN(days)||days>5) continue;
       const cc = g(row,C.COUNTRY);
       if(!cc) continue;
       if(!allAlerts[cc]) allAlerts[cc]=[];
       allAlerts[cc].push({
-        orderId:   g(row,C.ORDER_ID).substring(0,8)+'…',
+        orderId:   g(row,C.ORDER_ID),
         person:    g(row,C.PERSON),
         org:       g(row,C.ORG),
         product:   g(row,C.PRODUCT),
@@ -494,7 +494,7 @@ function renderTable(){
     const pc = r.urgency==='overdue'?'pill-red':'pill-amber';
     const dl = r.days<=0?`${Math.abs(r.days)}d overdue`:`${r.days}d left`;
     return `<tr>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">${r.orderId}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text2);word-break:break-all;max-width:160px">${r.orderId}</td>
       <td style="font-weight:500">${r.person||'—'}</td>
       <td style="font-size:11px;color:var(--text2)">${r.org||'—'}</td>
       <td style="font-size:11px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.product}">${r.product.substring(0,45)}${r.product.length>45?'…':''}</td>
@@ -556,7 +556,7 @@ function buildEmailHTML(rows,rl,ov,nr){
       const bd=r.urgency==='overdue'?'#fecaca':'#fde68a';
       const label=r.urgency==='overdue'?`${Math.abs(r.days)}d OVERDUE`:`${r.days}d left`;
       return `<tr style="border-bottom:1px solid #f1f0eb">
-        <td style="padding:9px 12px;font-family:monospace;font-size:11px;color:#6b6860">${r.orderId}</td>
+        <td style="padding:9px 12px;font-family:monospace;font-size:10px;color:#6b6860;word-break:break-all;max-width:160px">${r.orderId}</td>
         <td style="padding:9px 12px;font-size:13px;font-weight:500;color:#1a1916">${r.person||'—'}</td>
         <td style="padding:9px 12px;font-size:12px;color:#6b6860">${r.org||'—'}</td>
         <td style="padding:9px 12px;font-size:11px;color:#6b6860">${r.product.substring(0,50)}${r.product.length>50?'…':''}</td>
