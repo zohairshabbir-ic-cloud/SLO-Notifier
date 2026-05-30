@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SLO Email Notifier — Firstbase</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -249,6 +250,56 @@ tr:hover td { background: var(--bg3); }
 .log-err  { color: var(--danger); }
 .log-info { color: var(--text2); }
 
+
+/* ── Auth overlay ── */
+#auth-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+#auth-overlay::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(circle, #c8c6ba 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+.auth-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 40px 36px;
+  text-align: center; width: 100%; max-width: 380px;
+  box-shadow: var(--shadow-md);
+  position: relative; z-index: 1;
+}
+.auth-brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 28px; }
+.auth-brand-mark { width: 44px; height: 44px; border-radius: 12px; background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(37,99,235,0.35); }
+.auth-brand-mark svg { width: 22px; height: 22px; color: #fff; }
+.auth-brand-name { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+.auth-brand-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.auth-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.auth-subtitle { font-size: 13px; color: var(--text2); margin-bottom: 28px; line-height: 1.5; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.auth-divider span { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+.auth-error { background: var(--danger-lt); border: 1px solid var(--danger-bd); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--danger); margin-top: 16px; display: none; }
+.auth-domains { display: flex; gap: 6px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+.auth-domain-pill { font-family: var(--mono); font-size: 10px; padding: 3px 10px; border-radius: 20px; background: var(--accent-lt); color: var(--accent); border: 1px solid #bfdbfe; font-weight: 500; }
+
+/* Sign out button */
+.signout-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 11px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text2);
+  padding: 5px 12px; cursor: pointer;
+  transition: all 0.15s;
+}
+.signout-btn:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-lt); }
+.user-info { display: flex; align-items: center; gap: 8px; }
+.user-avatar { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--border2); }
+.user-email { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+
 @media (max-width: 640px) {
   .fields { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -257,7 +308,46 @@ tr:hover td { background: var(--bg3); }
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- Auth Overlay -->
+<div id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-brand-mark">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
+      </div>
+      <div>
+        <div class="auth-brand-name">SLO Notifier</div>
+        <div class="auth-brand-sub">Firstbase — An AppDirect Company</div>
+      </div>
+    </div>
+    <div class="auth-title">Sign in to continue</div>
+    <div class="auth-subtitle">Access is restricted to Firstbase and AppDirect team members.</div>
+    <div id="g_id_onload"
+      data-client_id="930992688695-arihta9kqfh3rgsc45m5mpq681ujpke2.apps.googleusercontent.com"
+      data-callback="handleGoogleSignIn"
+      data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+      data-type="standard"
+      data-shape="rectangular"
+      data-theme="outline"
+      data-text="signin_with"
+      data-size="large"
+      data-logo_alignment="left"
+      data-width="308">
+    </div>
+    <div class="auth-error" id="authError">
+      ⛔ Access denied. Only @firstbase.com and @appdirect.com accounts are allowed.
+    </div>
+    <div class="auth-domains">
+      <span class="auth-domain-pill">@firstbase.com</span>
+      <span class="auth-domain-pill">@appdirect.com</span>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none">
 
   <!-- Header -->
   <div class="header">
@@ -271,6 +361,14 @@ tr:hover td { background: var(--bg3); }
       </div>
     </div>
     <span class="header-badge">Returns Dashboard</span>
+    <div class="user-info" id="userInfo" style="display:none">
+      <img class="user-avatar" id="userAvatar" src="" alt="">
+      <span class="user-email" id="userEmail"></span>
+      <button class="signout-btn" onclick="handleSignOut()">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+        Sign out
+      </button>
+    </div>
   </div>
 
   <!-- 01 Credentials -->
@@ -631,6 +729,70 @@ function showProgress(s){ document.getElementById('progressWrap').style.display=
 function setProgress(p){ document.getElementById('progressBar').style.width=p+'%'; }
 function showAlert(msg,type){ const el=document.getElementById('alertBanner'); el.textContent=msg; el.className=`alert-banner ${type}`; el.style.display='block'; setTimeout(()=>el.style.display='none',6000); }
 function addLog(msg,type){ const log=document.getElementById('log'); log.style.display='flex'; const time=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); const line=document.createElement('div'); line.className='log-line'; line.innerHTML=`<span class="log-time">${time}</span><span class="log-${type}">${msg}</span>`; log.appendChild(line); log.scrollTop=log.scrollHeight; }
+
+// ── Google Auth ────────────────────────────────────────────────
+const ALLOWED_DOMAINS = ['firstbase.com', 'appdirect.com'];
+
+function handleGoogleSignIn(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email = payload.email || '';
+    const domain = email.split('@')[1];
+
+    if (!ALLOWED_DOMAINS.includes(domain)) {
+      document.getElementById('authError').style.display = 'block';
+      return;
+    }
+
+    // Store session in sessionStorage (clears when tab closes)
+    sessionStorage.setItem('slo_user', JSON.stringify({
+      email: email,
+      name: payload.name,
+      picture: payload.picture,
+      exp: payload.exp
+    }));
+
+    showApp(email, payload.picture);
+  } catch(e) {
+    document.getElementById('authError').style.display = 'block';
+  }
+}
+
+function showApp(email, picture) {
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('userInfo').style.display = 'flex';
+  document.getElementById('userEmail').textContent = email;
+  if (picture) document.getElementById('userAvatar').src = picture;
+}
+
+function handleSignOut() {
+  sessionStorage.removeItem('slo_user');
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('userInfo').style.display = 'none';
+  document.getElementById('authError').style.display = 'none';
+  // Reset Google's one-tap
+  if (window.google) google.accounts.id.disableAutoSelect();
+}
+
+// Check for existing session on load
+(function() {
+  try {
+    const stored = sessionStorage.getItem('slo_user');
+    if (stored) {
+      const user = JSON.parse(stored);
+      // Check token not expired
+      if (user.exp && Date.now() / 1000 < user.exp) {
+        showApp(user.email, user.picture);
+        return;
+      }
+    }
+  } catch(e) {}
+  // Show overlay if no valid session
+  document.getElementById('auth-overlay').style.display = 'flex';
+})();
+
 </script>
 </body>
 </html>
